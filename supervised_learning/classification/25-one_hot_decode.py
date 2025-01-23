@@ -1,4 +1,6 @@
-ne-Hot Encode
+#!/usr/bin/env python3
+
+""" One-Hot Encode
 """
 
 
@@ -17,4 +19,3 @@ def one_hot_decode(one_hot):
         return np.argmax(one_hot, axis=0)
     except Exception:
         return None
-
