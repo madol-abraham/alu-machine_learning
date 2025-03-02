@@ -1,40 +1,52 @@
 #!/usr/bin/env python3
-"""
-    script that prints the location of a specific user:
-"""
 
+""" Return the location of a specific GitHub user """
 
 import requests
+import sys
 import time
-from datetime import datetime
 
 
-def main(url):
+def get_user_location(api_url):
     """
-    - The user is passed as first argument of the script
-    with the full API URL, example: ./2-user_location.py
-    - If the user doesn’t exist, print Not found
-    - If the status code is 403, print Reset in X min where X
-    is the number of minutes from now and the value of
-    X-Ratelimit-Reset
-    - Your code should not be executed when the file is
-    imported (you should use if __name__ == '__main__':)
+    Fetches the location of a specific GitHub user from the provided API URL.
 
+    Parameters:
+    api_url (str): The API endpoint URL to fetch user data from.
+
+    Returns:
+    None: Prints the user's location or an error message if not found.
+
+    Raises:
+    requests.exceptions.RequestException: If there's an HTTP request issue.
     """
-    response = requests.get(url)
+    try:
+        res = requests.get(api_url)
 
-    if response.status_code == 404:
-        print("Not found")
-    elif response.status_code == 403:
-        reset_timestamp = int(response.headers["X-Ratelimit-Reset"])
-        current_timestamp = int(time.time())
-        reset_in_minutes = (reset_timestamp - current_timestamp) // 60
-        print("Reset in {} min".format(reset_in_minutes))
-    else:
-        print(response.json()["location"])
+        if res.status_code == 403:
+            rate_limit_reset = int(res.headers.get('X-Ratelimit-Reset', 0))
+            current_time = int(time.time())
+            diff = (rate_limit_reset - current_time) // 60
+            print("Reset in {} min".format(diff))
+        elif res.status_code == 404:
+            print("Not found")
+        elif res.status_code == 200:
+            user_data = res.json()
+            location = user_data.get('location', 'Location not provided')
+            print(location)
+        else:
+            error_msg = "Error: Status code {}".format(res.status_code)
+            print(error_msg)
+
+    except requests.exceptions.RequestException as e:
+        error_msg = "An error occurred: {}".format(e)
+        print(error_msg)
 
 
 if __name__ == "__main__":
-    import sys
+    if len(sys.argv) != 2:
+        print("Usage: ./2-user_location.py <API_URL>")
+        sys.exit(1)
 
-    main(sys.argv[1])
+    api_url = sys.argv[1]
+    get_user_location(api_url)
